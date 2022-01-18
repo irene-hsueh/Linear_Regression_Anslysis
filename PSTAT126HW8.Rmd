@@ -1,0 +1,212 @@
+---
+title: "Homework 8"
+subtitle: "PSTAT 126"
+author: "Sampreeth Salveru"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(alr4)
+library(leaps)
+library(faraway)
+```
+
+
+## 1.
+```{r include=FALSE}
+data("salary")
+attach(salary)
+```
+### (a)
+The coefficient 24697 is the salary amount in dollars for a male faculty member. The coefficient 3340 is the salary decrease in dollars if the faculty member is a female.
+
+
+### (b)
+The coefficient for sex changed signs, as the additional term for years employed increases the salary by 759 per year given the sex term.
+
+## 2.
+### (a)
+```{r}
+data("BGSall")
+attach(BGSall)
+bg.lm <- lm(HT18 ~ HT2 + Sex)
+yhat <- fitted(bg.lm)
+yhatM <- yhat[Sex == 0]
+yhatF <- yhat[Sex == 1]
+
+plot(HT2, HT18)
+points(HT2[Sex == 0], HT18[Sex == 0], col = 'blue', lwd=2)
+points(HT2[Sex == 1], HT18[Sex == 1], col = 'red', lwd=2)
+lines(HT2[Sex == 0], yhatM, col = 'blue')
+lines(HT2[Sex == 1], yhatF, col = 'red')
+legend('bottomright', col = c('blue', 'red'), 
+       c('Male','Female'), lty = c(1,1), text.col = c('blue', 'red'), 
+       pch = c(1,1))
+```
+
+### (b)
+```{r}
+inter.lm <- lm(HT18 ~ HT2 * Sex)
+anova(bg.lm, inter.lm)
+```
+
+We do a F-test for interaction terms, our p-value is large and F-value is small. He fail to reject the interaction terms are equal to zero. So we prefer the parallel model compared to the non-parallel model.
+
+### (c)
+```{r}
+summary(bg.lm)
+```
+
+The difference in intercepts between males and females is 11.1297 and the std error is 0.8655.
+
+## 3.
+### (a)
+```{r}
+data("mantel")
+attach(mantel)
+man.lm <- lm(Y ~ ., data = mantel)
+man.0 <- lm(Y ~ 1, data = mantel)
+step(man.0, scope = list(lower = man.0, upper = man.lm), 
+     direction = "forward")
+```
+
+
+```{r}
+step(man.lm, scope = list(lower = man.0, upper = man.lm), 
+     direction = "backward")
+```
+
+Applying the forward and backward algorithms, using criterion AIC, produced lm(Y ~ X1 + X2) as the model with the lowest AIC. So we will choose these predictors.
+
+### (b)
+```{r}
+man.reg <- regsubsets(cbind(X1,X2,X3),Y,data = mantel)
+summary.reg <- summary(man.reg)
+names(summary.reg)
+summary.reg$which
+summary.reg$rsq
+summary.reg$adjr2
+summary.reg$cp
+summary.reg$bic
+
+par(mfrow = c(2, 2))
+plot(summary.reg$rsq, xlab = "Number of Variables", ylab = "RSq", type = "b")
+
+plot(summary.reg$adjr2, xlab = "Number of Variables", ylab = "Adjusted RSq", type = "b")
+best_adj_r2 = which.max(summary.reg$adjr2)
+points(best_adj_r2, summary.reg$adjr2[best_adj_r2],
+       col = "red",cex = 2, pch = 20)
+
+plot(summary.reg$cp, xlab = "Number of Variables", ylab = "Cp", type = 'b')
+best_cp = which.min(summary.reg$cp[-c(length(summary.reg$cp))])
+points(best_cp, summary.reg$cp[best_cp],
+       col = "red", cex = 2, pch = 20)
+
+plot(summary.reg$bic, xlab = "Number of Variables", ylab = "BIC", type = 'b')
+best_bic = which.min(summary.reg$bic)
+points(best_bic, summary.reg$bic[best_bic],
+       col = "red", cex = 2, pch = 20)
+```
+
+Based off of our outputs from the regsubets() function, the biggest increase in $R^2$, largest value for adjusted $R^2$, and best Cp value goes to the second model with 2 variables. The BIC chooses the third model but the values are similar, so choose the second model. The model is as follows: lm(Y ~ X1 + X2)
+
+## 4.
+```{r}
+attach(divusa)
+div.lm <- lm(divorce ~ ., data = divusa)
+div.reg <- regsubsets(cbind(year,unemployed,femlab,marriage,birth,military),divorce,data = divusa)
+sum.reg <- summary(div.reg)
+sum.reg$which
+
+par(mfrow = c(2, 2))
+
+plot(sum.reg$adjr2, xlab = "Number of Variables", ylab = "Adjusted RSq", type = "b")
+best_adj_r2 = which.max(sum.reg$adjr2)
+points(best_adj_r2, sum.reg$adjr2[best_adj_r2],
+       col = "red",cex = 2, pch = 20)
+
+plot(sum.reg$cp, xlab = "Number of Variables", ylab = "Cp", type = 'b')
+best_cp = which.min(sum.reg$cp[-c(length(sum.reg$cp))])
+points(best_cp, sum.reg$cp[best_cp],
+       col = "red", cex = 2, pch = 20)
+
+plot(sum.reg$bic, xlab = "Number of Variables", ylab = "BIC", type = 'b')
+best_bic = which.min(sum.reg$bic)
+points(best_bic, sum.reg$bic[best_bic],
+       col = "red", cex = 2, pch = 20)
+```
+
+### (a)
+Best subsets regression with adjusted $R^2$ is model 5. lm(divorce ~ year + femlab + marriage + birth + military)
+
+### (b)
+Best subsets regression with adjusted Mallow's $C_p$ is model 5. lm(divorce ~ year + femlab + marriage + birth + military)
+
+### (c)
+Best subsets regression with adjusted BIC is model 5. lm(divorce ~ year + femlab + marriage + birth + military)
+
+## 5.
+### (a)
+```{r}
+data("lathe1")
+attach(lathe1)
+lathe.lm <- lm(Life ~ Speed + Feed + Speed^2 + Feed^2 + Speed * Feed)
+boxCox(lathe.lm)
+```
+
+Running the boxCox() function on the response, shows that the confidence interval for the transformation includes 0. A power 0 transformation indicates a natural logarithmic transformation.
+
+### (b)
+```{r}
+lbc.lm <- lm(log(Life) ~ Speed + Feed + Speed^2 + Feed^2 + Speed * Feed)
+summary(lbc.lm)
+```
+
+$H_0: \beta_{11}=\beta_{22}=\beta_{12}=0$  $H_1: \beta_{j} \ne 0$ at least one where $j=11,22,12$
+Our F-statistic is large at 54.52 and our p-value is small at 1.273e-08. Based off of this we reject $H_0$. At least one of the model parameters are significant.
+
+### (c)
+$H_0: \beta_1 = \beta_{11} = \beta_{12}$. This hypothesis is testing if Speed has no effect on log(Life).
+
+### (d)
+```{r}
+redlbc <- lm(log(Life) ~  Feed + Feed^2)
+anova(redlbc, lbc.lm)
+```
+
+He test the null hypothesis from part (c).
+Our p-value is small and F-statistics is big, so we reject the null hypothesis.
+We state that Speed does have an effect on log(Life).
+
+### (e)
+```{r include=FALSE}
+panel.fun <- function(x, y, ...){
+  points(x, y, ...)
+  dataEllipse(x, y, plot.points=FALSE, levels=c(.90))
+  showLabels(x, y, labels=rownames(UN11),method="mahal", n=4)}
+```
+
+```{r}
+influenceIndexPlot(lbc.lm, vars = c('hat','Cook'), id = TRUE)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
