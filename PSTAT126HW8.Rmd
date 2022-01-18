@@ -1,7 +1,7 @@
 ---
 title: "Homework 8"
 subtitle: "PSTAT 126"
-author: "Sampreeth Salveru"
+author: "Irene Hsueh"
 output: pdf_document
 ---
 
